@@ -145,6 +145,28 @@ export default function Watch() {
     return off
   }, [id, video, setCachedVideo])
 
+  // Poll for processing status if the video is still processing
+  useEffect(() => {
+    if (video && video.processingStatus === 'processing') {
+      const interval = setInterval(async () => {
+        try {
+          // Pass skipView=true so we don't increment views while polling
+          const { data } = await videoApi.get(id, { params: { skipView: true } })
+          const v = data?.data || data
+          if (v && v.processingStatus !== 'processing') {
+             setVideo(v)
+             setCachedVideo(id, v)
+             clearInterval(interval)
+          }
+        } catch (e) {
+          console.error("Error polling video status:", e)
+        }
+      }, 5000)
+      
+      return () => clearInterval(interval)
+    }
+  }, [video?.processingStatus, id, setCachedVideo])
+
   // Like Logic
   const { isLiked: initialLiked, count: likeCount } = getLikeStatus(
     video?._id || id,
@@ -187,11 +209,12 @@ export default function Watch() {
   }
 
   const title = video?.title || 'Untitled'
-  const src = video?.videoFile?.url || video?.videoFile || video?.url || video?.videoUrl
+  const src = video?.masterPlaylistUrl || video?.videoFile?.url || video?.videoFile || video?.url || video?.videoUrl
   const poster = video?.thumbnail || video?.thumbnailUrl
   const owner = video?.owner || video?.channel || {}
   const views = video?.views ?? 0
   const createdAt = video?.createdAt ? new Date(video.createdAt).toLocaleDateString() : null
+  const processingStatus = video?.processingStatus || 'completed' // Assume completed if not provided
 
   return (
     <div className="space-y-6 py-4">
@@ -201,6 +224,7 @@ export default function Watch() {
           poster={poster} 
           title={title}
           videoId={id}
+          processingStatus={processingStatus}
           onPlay={() => {
             if (!hasViewedRef.current) {
               markVideoAsViewed(id)

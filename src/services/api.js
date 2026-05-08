@@ -61,7 +61,7 @@ export const userApi = {
 
 export const videoApi = {
   list: (params = {}) => api.get('/videos', { params }),
-  get: (videoId) => api.get(`/videos/${videoId}`),
+  get: (videoId, config = {}) => api.get(`/videos/${videoId}`, config),
   remove: (videoId) => api.delete(`/videos/${videoId}`),
   update: (videoId, data, thumbnailFile) => {
     if (thumbnailFile) {
