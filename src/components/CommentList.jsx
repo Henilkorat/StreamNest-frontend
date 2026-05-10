@@ -4,7 +4,7 @@ import LikeButton from './LikeButton.jsx'
 import { useAuth } from '../state/AuthContext.jsx'
 
 export default function CommentList({ videoId }) {
-  const { user } = useAuth()
+  const { user, requireAuth } = useAuth()
   const [comments, setComments] = useState([])
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(true)
@@ -35,20 +35,23 @@ export default function CommentList({ videoId }) {
 
   useEffect(() => { load() }, [videoId])
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
-    if (!text.trim() || submitting) return
+    
+    requireAuth(async () => {
+      if (!text.trim() || submitting) return
 
-    setSubmitting(true)
-    try {
-      await commentsApi.add(videoId, { content: text })
-      setText('')
-      await load()
-    } catch (error) {
-      console.error('Failed to add comment:', error)
-    } finally {
-      setSubmitting(false)
-    }
+      setSubmitting(true)
+      try {
+        await commentsApi.add(videoId, { content: text })
+        setText('')
+        await load()
+      } catch (error) {
+        console.error('Failed to add comment:', error)
+      } finally {
+        setSubmitting(false)
+      }
+    })
   }
 
   const handleDelete = async (commentId) => {

@@ -8,6 +8,11 @@ export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // Auth Modal State
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [authModalType, setAuthModalType] = useState('login') // 'login' or 'register'
+  const [pendingAction, setPendingAction] = useState(null)
+
   useEffect(() => {
     let isMounted = true
     let hasInitiated = false
@@ -98,6 +103,27 @@ export function AuthProvider({ children }) {
       setAccessToken(token || null)
       setAuthHeader(token || null)
       setUser(userData || null)
+      
+      // Execute pending action if any
+      if (pendingAction) {
+        pendingAction()
+        setPendingAction(null)
+      }
+      setShowAuthModal(false)
+      
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const register = async (credentials) => {
+    try {
+      const { data } = await userApi.register(credentials)
+      // On successful registration, you might need to login automatically 
+      // or the backend sets cookies. Depending on backend, we might just redirect.
+      // But if userApi.register doesn't auto-login, we could call login here.
+      // For now, let's just return data. We handle login next.
       return data
     } catch (error) {
       throw error
@@ -116,15 +142,37 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const requireAuth = (actionCallback) => {
+    if (user) {
+      actionCallback()
+    } else {
+      setPendingAction(() => actionCallback)
+      setAuthModalType('login')
+      setShowAuthModal(true)
+    }
+  }
+
+  const closeAuthModal = () => {
+    setShowAuthModal(false)
+    setPendingAction(null)
+  }
+
   const value = useMemo(() => ({
     user,
     isAuthenticated: !!user,
     accessToken,
     loading,
     login,
+    register,
     logout,
-    setUser
-  }), [user, accessToken, loading])
+    setUser,
+    showAuthModal,
+    setShowAuthModal,
+    authModalType,
+    setAuthModalType,
+    requireAuth,
+    closeAuthModal
+  }), [user, accessToken, loading, showAuthModal, authModalType])
 
   return (
     <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { likesApi } from '../services/api.js'
 import { useVideoState } from '../state/VideoStateContext.jsx'
 import { on } from '../utils/events.js'
+import { useAuth } from '../state/AuthContext.jsx'
 
 export default function LikeButton({ videoId, commentId, initialLiked = false, initialCount = 0, onLikeChange }) {
   const { getLikeStatus, toggleLike, checkLike } = useVideoState()
+  const { requireAuth } = useAuth()
   const [loading, setLoading] = useState(false)
   const itemId = commentId || videoId
   const prevIdRef = useRef(itemId)
@@ -39,32 +41,34 @@ export default function LikeButton({ videoId, commentId, initialLiked = false, i
     return off
   }, [videoId]) // Don't include checkLike in deps to avoid loop
 
-  const handleToggle = async () => {
-    if (loading || !itemId) return
+  const handleToggle = () => {
+    requireAuth(async () => {
+      if (loading || !itemId) return
 
-    hasInteractedRef.current = true
-    setLoading(true)
-    
-    try {
-      if (commentId) {
-        // Comments still use direct API call (not in centralized store)
-        await likesApi.toggleComment(itemId)
-        if (onLikeChange) {
-          onLikeChange(!isLiked)
+      hasInteractedRef.current = true
+      setLoading(true)
+      
+      try {
+        if (commentId) {
+          // Comments still use direct API call (not in centralized store)
+          await likesApi.toggleComment(itemId)
+          if (onLikeChange) {
+            onLikeChange(!isLiked)
+          }
+        } else if (videoId) {
+          // Videos use centralized store
+          await toggleLike(videoId, count)
+          if (onLikeChange) {
+            onLikeChange(!isLiked)
+          }
         }
-      } else if (videoId) {
-        // Videos use centralized store
-        await toggleLike(videoId, count)
-        if (onLikeChange) {
-          onLikeChange(!isLiked)
-        }
+      } catch (error) {
+        console.error('Failed to toggle like:', error)
+        hasInteractedRef.current = false
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Failed to toggle like:', error)
-      hasInteractedRef.current = false
-    } finally {
-      setLoading(false)
-    }
+    })
   }
 
   return (

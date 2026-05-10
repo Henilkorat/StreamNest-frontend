@@ -4,7 +4,7 @@ import { useAuth } from '../state/AuthContext.jsx'
 import { emit } from '../utils/events.js'
 
 export default function AddToPlaylist({ videoId }) {
-  const { user } = useAuth()
+  const { user, requireAuth } = useAuth()
   const [open, setOpen] = useState(false)
   const [playlists, setPlaylists] = useState([])
   const [name, setName] = useState('')
@@ -63,7 +63,7 @@ export default function AddToPlaylist({ videoId }) {
     <div className="relative">
       <button 
         className="btn-secondary inline-flex items-center gap-2" 
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => requireAuth(() => setOpen((o) => !o))}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

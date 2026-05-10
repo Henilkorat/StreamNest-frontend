@@ -52,12 +52,6 @@ export default function Watch() {
     // 1. Validation Guards
     if (!id || authLoading) return 
     
-    if (!isAuthenticated) {
-      setLoading(false)
-      setError('Please sign in to view this video.')
-      return
-    }
-
     // 2. 🔒 THE FIX: Strict Mode Guard
     // If we have already fetched (or are fetching) this ID, STOP immediately.
     // This prevents the +2, +4 view count issue.

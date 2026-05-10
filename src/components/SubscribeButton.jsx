@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useVideoState } from '../state/VideoStateContext.jsx'
 import { on } from '../utils/events.js'
+import { useAuth } from '../state/AuthContext.jsx'
 
 export default function SubscribeButton({ channelId, initialSubscribed = false, initialCount = 0 }) {
   const { getSubscriptionStatus, toggleSubscription, checkSubscription } = useVideoState()
+  const { requireAuth } = useAuth()
   const [loading, setLoading] = useState(false)
   
   // Get subscription status from centralized store
@@ -25,16 +27,18 @@ export default function SubscribeButton({ channelId, initialSubscribed = false, 
     return off
   }, [channelId]) // Don't include checkSubscription in deps to avoid loop
 
-  const handleClick = async () => {
-    if (loading || !channelId) return
-    setLoading(true)
-    try {
-      await toggleSubscription(channelId, count)
-    } catch (error) {
-      console.error('Failed to toggle subscription:', error)
-    } finally {
-      setLoading(false)
-    }
+  const handleClick = () => {
+    requireAuth(async () => {
+      if (loading || !channelId) return
+      setLoading(true)
+      try {
+        await toggleSubscription(channelId, count)
+      } catch (error) {
+        console.error('Failed to toggle subscription:', error)
+      } finally {
+        setLoading(false)
+      }
+    })
   }
 
   return (
