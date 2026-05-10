@@ -132,8 +132,8 @@ export default function VideoPlayer({ src, poster, title, videoId, onPlay }) {
           </video>
           
           {/* Custom Settings Menu Overlay */}
-          <div className="absolute bottom-16 sm:bottom-20 right-4 z-50 transition-opacity opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center gap-2">
-            <div className="relative">
+          <div className="absolute bottom-16 sm:bottom-20 right-4 z-[60] transition-opacity opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center gap-2">
+            <div className={`relative ${!isFullscreen ? 'hidden md:block' : 'block'}`}>
               <button
                 onClick={(e) => { e.stopPropagation(); setShowSettings(!showSettings); }}
                 className="p-2 sm:p-2.5 bg-black/60 hover:bg-black/80 rounded-full text-white backdrop-blur transition shadow-lg"
