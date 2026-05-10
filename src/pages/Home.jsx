@@ -39,7 +39,6 @@ export default function Home() {
   const searchQuery = searchParams.get('search') || ''
 
   const load = useCallback(async () => {
-    if (!isAuthenticated) return
     setLoading(true)
     setError('')
     try {
@@ -116,79 +115,66 @@ export default function Home() {
   // Fetch videos whenever `load` (which depends on `currentPage`) changes
   useEffect(() => { load() }, [load])
 
-  // --- UNAUTHENTICATED VIEW (UNCHANGED) ---
-  if (!isAuthenticated) {
-    return (
-      <div className="space-y-8 py-4">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-8 sm:p-12 lg:p-16">
-          <div className="relative z-10 max-w-3xl">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-white to-neutral-300 bg-clip-text text-transparent">
-              Welcome to StreamNest
-            </h1>
-            <p className="text-lg sm:text-xl text-neutral-300 mb-6 max-w-2xl">
-              Your destination for video streaming, sharing, and discovery. Watch, upload, and engage with content creators from around the world.
-            </p>
-            <p className="text-base text-neutral-400 mb-8 max-w-xl">
-              Join our community to explore trending videos, create your own content, and connect with fellow creators.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link 
-                to="/register" 
-                className="btn-primary text-base px-6 py-3 w-full sm:w-auto"
-              >
-                Get Started
-              </Link>
-              <Link 
-                to="/login" 
-                className="btn-secondary text-base px-6 py-3 w-full sm:w-auto"
-              >
-                Sign In
-              </Link>
-            </div>
-          </div>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-        </section>
-      </div>
-    )
-  }
+  // Fetch videos whenever `load` (which depends on `currentPage`) changes
+  useEffect(() => { load() }, [load])
 
-  // --- AUTHENTICATED VIEW ---
   return (
     <div className="space-y-8 py-4">
-      {/* Hero Section (UNCHANGED) */}
-      {showHero && (
+      {/* Hero Section */}
+      {(!isAuthenticated || showHero) && (
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-8 sm:p-12 lg:p-16">
-
-          {/* Close button */}
-          <button
-            onClick={() => setShowHero(false)}
-            className="absolute top-4 right-4 text-white/70 hover:text-white text-2xl font-bold z-20"
-          >
-            ×
-          </button>
+          
+          {isAuthenticated && (
+            <button
+              onClick={() => setShowHero(false)}
+              className="absolute top-4 right-4 text-white/70 hover:text-white text-2xl font-bold z-20"
+            >
+              ×
+            </button>
+          )}
 
           <div className="relative z-10 max-w-3xl">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-white to-neutral-300 bg-clip-text text-transparent">
-              Discover Amazing Content
+              {isAuthenticated ? "Discover Amazing Content" : "Welcome to StreamNest"}
             </h1>
             <p className="text-lg sm:text-xl text-neutral-300 mb-6 max-w-2xl">
-              Explore trending videos, discover new creators, and stay up-to-date with the latest content on StreamNest.
+              {isAuthenticated 
+                ? "Explore trending videos, discover new creators, and stay up-to-date with the latest content on StreamNest."
+                : "Your destination for video streaming, sharing, and discovery. Watch, upload, and engage with content creators from around the world."}
             </p>
             <p className="text-base text-neutral-400 mb-8 max-w-xl">
-              From entertainment to education, find videos that inspire and engage you.
+              {isAuthenticated 
+                ? "From entertainment to education, find videos that inspire and engage you."
+                : "Join our community to explore trending videos, create your own content, and connect with fellow creators."}
             </p>
+            
+            {!isAuthenticated && (
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button 
+                  onClick={() => {
+                    document.getElementById('trending-videos').scrollIntoView({ behavior: 'smooth' })
+                  }}
+                  className="btn-primary text-base px-6 py-3 w-full sm:w-auto"
+                >
+                  Start Watching
+                </button>
+                <Link 
+                  to="/login" 
+                  className="btn-secondary text-base px-6 py-3 w-full sm:w-auto"
+                >
+                  Sign In
+                </Link>
+              </div>
+            )}
           </div>
 
-          {/* Background circles */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
         </section>
       )}
 
       {/* Header and Refresh Button */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div id="trending-videos" className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="page-title mb-0">Trending Videos</h2>
           <p className="text-neutral-400 mt-2">Discover trending videos on StreamNest</p>

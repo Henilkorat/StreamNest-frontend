@@ -91,3 +91,18 @@ body {
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
+
+/* Video Player overrides */
+video.hide-native-fullscreen::-webkit-media-controls-fullscreen-button {
+  display: none !important;
+}
+
+/* Hide custom fullscreen button on iOS devices where container fullscreen API isn't supported */
+@supports (-webkit-touch-callout: none) {
+  .hide-on-ios {
+    display: none !important;
+  }
+  video.hide-native-fullscreen::-webkit-media-controls-fullscreen-button {
+    display: flex !important;
+  }
+}
