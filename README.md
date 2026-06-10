@@ -1,86 +1,97 @@
-# StreamNest Frontend (React + Vite + Tailwind)
+# StreamNest Frontend
 
-This is a minimalist, modern React frontend for your existing YouTube-like backend.
+Minimalist React frontend for the StreamNest video sharing and adaptive streaming platform.
 
-## Prerequisites
-- Node.js 18+
-- Backend running and accessible (default: `http://localhost:8000`)
-- Backend `CORS_ORIGIN` must include `http://localhost:5173`
+## Features
 
-## Quick start
+* **HLS Adaptive Playback**: Custom HTML5 media player using `hls.js` with resolution switcher (up to 1080p) and fallback handling for transcoder processing states.
+* **Creator Studio**: Channel analytics dashboard displaying aggregated views, likes, subscriber counts, and video catalog controls.
+* **Interactive Features**: Dynamic comments thread, optimistic like/subscribe toggles, and user playlist management.
+* **State & Session Persistence**: Route guards for authentication, sessionStorage-backed video metadata, and dynamic action redirection.
+
+## Tech Stack
+
+* **Frontend Framework**: React 18.3.1 (Vite 5.4.8)
+* **Styling**: Tailwind CSS 3.4.14, PostCSS 8.4.47
+* **Routing & Client**: React Router DOM 6.26.2, Axios 1.7.7
+* **Video Playback**: HLS.js 1.6.16
+* **Deployment**: Multi-stage Docker (Nginx Alpine)
+
+## Architecture Overview
+
+* **Authentication**: Cookie-based HTTP-only JWTs. The auth provider caches pending user interactions (e.g., likes/subscriptions) and resumes execution post-login.
+* **Caching & View Protection**: Global state manager stores video statistics and viewed session lists, preventing duplicate API view increments caused by React StrictMode double mounts.
+* **Decoupled Sync**: A native `EventTarget`-based custom event bus manages UI updates across detached pages without context nesting or redundant root re-renders.
+
+## Project Structure
+
+```text
+src/
+├── components/   # UI elements (HLS VideoPlayer, Comments, LikeButton, AddToPlaylist)
+├── pages/        # Views (Home, Watch, Studio, Library, Settings, Channel)
+├── services/     # Axios client configuration and backend endpoints
+├── state/        # Global context models (Auth, Sidebar, VideoState)
+└── utils/        # Event bus and search parsing helpers
+```
+
+## Getting Started
+
+### Prerequisites
+
+* Node.js 18+
+* StreamNest backend running on `http://localhost:8000` (CORS configured to accept `http://localhost:5173`)
+
+### Installation & Run
+
 ```bash
-cd frontend
 npm install
-# set API base url for backend origin
-# create .env.local (or .env) with:
-# VITE_API_BASE_URL=http://localhost:8000
 npm run dev
 ```
-Open http://localhost:5173
 
-## Environment
-- `VITE_API_BASE_URL` (required): Backend origin (e.g. `http://localhost:8000`).
+### Environment Variables
 
-## Auth notes
-- Backend issues `accessToken` and `refreshToken` cookies plus token in JSON.
-- Client sends `withCredentials: true` on requests and also keeps `Authorization: Bearer` when token provided in JSON.
+Set `VITE_API_BASE_URL` in a `.env` file to point to your backend:
 
-## Implemented pages
-- Home: Lists videos from `GET /api/v1/videos` (requires auth per backend routes).
-- Login: `POST /api/v1/users/login`
-- Register: Multipart `POST /api/v1/users/register` (fields: `fullName`, `userName`, `email`, `password`, `avatar`, `coverImage?`).
-- Navbar: Auth-aware, logout via `POST /api/v1/users/logout`.
+| Variable Name | Required | Default Value | Description |
+| :--- | :--- | :--- | :--- |
+| `VITE_API_BASE_URL` | Yes | `http://localhost:8000` | The origin URL of the running StreamNest API backend service. |
 
-## Important backend endpoints (mounted in backend)
-Base: `/api/v1`
-- Users: `/users/register`, `/users/login`, `/users/logout`, `/users/refresh-token`, `/users/change-password`, `/users/current-user`, `/users/update-account`, `/users/update-avatar`, `/users/update-coverImage`, `/users/channel/:username`, `/users/history`.
-- Videos: `/videos` (GET list, POST upload multipart: `videoFile`, `thumbnail`), `/videos/:videoId` (GET, DELETE, PATCH with `thumbnail`), `/videos/toggle/publish/:videoId` (PATCH).
-- Comments: `/comments/:videoId` (GET, POST), `/comments/c/:commentId` (DELETE).
-- Likes: `/likes/toggle/v/:videoId` (POST), `/likes/toggle/c/:commentId` (POST), `/likes/toggle/t/:tweetId` (POST), `/likes/videos` (GET).
-- Tweets: `/tweets` (POST), `/tweets/user/:userId` (GET), `/tweets/:tweetId` (PATCH, DELETE).
-- Playlist: `/playlist` (POST), `/playlist/:playlistId` (GET, PATCH, DELETE), `/playlist/add/:videoId/:playlistId` (PATCH), `/playlist/remove/:videoId/:playlistId` (PATCH), `/playlist/user/:userId` (GET).
-- Subscriptions: `/subscriptions/c/:channelId` (GET, POST), `/subscriptions/u/:channelId` (GET).
-- Dashboard: `/dashboard/stats` (GET), `/dashboard/videos` (GET).
-- Health: `/healthcheck` (GET).
+## API Endpoints
 
-Note: Many routes require auth (`verifyJWT`), so login is needed before most actions. Ensure backend CORS allows the frontend origin and credentials.
+All endpoints are relative to `/api/v1`:
 
-## Folder overview
-```
-frontend/
-  src/
-    components/    # UI components (Navbar, VideoCard, ...)
-    pages/         # Page-level views
-    services/      # Axios API client
-    state/         # Auth context
+* **Auth & Profiles**: `POST /users/login`, `POST /users/register`, `POST /users/logout`, `GET /users/current-user`, `PATCH /users/update-account`, `PATCH /users/update-avatar`, `PATCH /users/update-coverImage`, `GET /users/channel/:username`, `GET /users/history`
+* **Content Management**: `GET /videos`, `POST /videos`, `GET/PATCH/DELETE /videos/:videoId`, `PATCH /videos/toggle/publish/:videoId`
+* **Engagement**: `GET/POST /comments/:videoId`, `DELETE /comments/c/:commentId`, `POST /likes/toggle/[v|c|t]/:id`, `GET /likes/videos`
+* **Playlists & Social**: `POST /playlist`, `GET/PATCH/DELETE /playlist/:playlistId`, `PATCH /playlist/[add|remove]/:videoId/:playlistId`, `POST/GET /subscriptions/c/:channelId`
+* **Dashboard**: `GET /dashboard/stats`, `GET /dashboard/videos`
+
+## Database Schema (Referenced)
+
+* **User**: `_id`, `userName`, `email`, `fullName`, `avatar`, `coverImage`, `watchHistory`
+* **Video**: `_id`, `title`, `description`, `thumbnail`, `views`, `processingStatus`, `masterPlaylistUrl`, `owner`
+* **Playlist**: `_id`, `name`, `videos`, `owner`
+
+## Deployment
+
+Build and host static assets via Nginx using the multi-stage Docker setup:
+
+```bash
+docker build -t streamnest-frontend .
+docker run -d -p 8080:80 streamnest-frontend
 ```
 
-## Hand-off prompt for another AI (if you want further UI pages)
-Copy/paste this prompt for another model to extend the frontend without touching backend:
+## Challenges & Key Learnings
 
-"""
-You are extending a React (Vite) + Tailwind frontend named StreamNest. Keep the design minimalist and modern (dark theme, ample spacing, rounded corners). Do not modify the backend. Use axios with baseURL `${VITE_API_BASE_URL}/api/v1` and withCredentials=true. Respect the following backend endpoints and auth requirements:
+1. **View Count Double-Counting**: Resolved React StrictMode double-mount API calls by caching viewed video IDs in `sessionStorage` and validating requests against a memory lock ref during the mount lifecycle.
+2. **Component Coupling**: Reduced prop-drilling by employing browser native `EventTarget` dispatch calls to signal state invalidation dynamically across disconnected lists.
+3. **Cross-Browser HLS Support**: Designed custom playback control overlays to fallback gracefully to Safari's native WebKit player where MSE (Media Source Extensions) quality menus are restricted.
 
-- Users: POST /users/register (multipart: avatar required; coverImage optional), POST /users/login, POST /users/logout, POST /users/refresh-token, GET /users/current-user, POST /users/change-password, PATCH /users/update-account, PATCH /users/update-avatar (multipart), PATCH /users/update-coverImage (multipart), GET /users/channel/:username, GET /users/history
-- Videos: GET /videos, POST /videos (multipart: videoFile, thumbnail), GET/DELETE/PATCH /videos/:videoId (thumbnail on PATCH), PATCH /videos/toggle/publish/:videoId
-- Comments: GET/POST /comments/:videoId, DELETE /comments/c/:commentId
-- Likes: POST /likes/toggle/v/:videoId, POST /likes/toggle/c/:commentId, POST /likes/toggle/t/:tweetId, GET /likes/videos
-- Tweets: POST /tweets, GET /tweets/user/:userId, PATCH/DELETE /tweets/:tweetId
-- Playlist: POST /playlist, GET/PATCH/DELETE /playlist/:playlistId, PATCH /playlist/add/:videoId/:playlistId, PATCH /playlist/remove/:videoId/:playlistId, GET /playlist/user/:userId
-- Subscriptions: GET/POST /subscriptions/c/:channelId, GET /subscriptions/u/:channelId
-- Dashboard: GET /dashboard/stats, GET /dashboard/videos
-- Health: GET /healthcheck
+## Future Improvements
 
-Constraints:
-- Use React Router.
-- Maintain a global AuthContext that stores current user and optional accessToken (Authorization header) and uses cookie-based credentials.
-- Build pages: Home (video grid + search filter), Watch (video details + comments + like), Channel (profile, subscribe button, channel videos), Upload (upload videoFile+thumbnail), Library (playlists, liked videos, history), Studio (dashboard stats and video management), Auth (login/register), Settings (profile updates, avatar/cover uploads, password change).
-- Components: Navbar (auth-aware), Sidebar (collapsible), VideoCard, VideoGrid, Player, CommentList, LikeButton, SubscribeButton, PlaylistManager, UploadForm.
-- Visual style: dark, high-contrast minimalism, 12px spacing scale, rounded-xl surfaces, subtle borders, smooth hover/focus states.
-- Do not change backend code. All forms must include required fields per endpoints above.
+* WebSockets integration for real-time view counts and chat feeds.
+* Keyboard shortcuts and customizable playback rates in the player.
 
-Deliverables:
-- Implement routes and pages listed.
-- Wire API calls with axios client.
-- Keep code clean, readable, and typed where helpful with JSDoc.
-"""
+## License
+
+MIT
