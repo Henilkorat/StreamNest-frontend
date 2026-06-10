@@ -81,17 +81,4 @@ docker build -t streamnest-frontend .
 docker run -d -p 8080:80 streamnest-frontend
 ```
 
-## Challenges & Key Learnings
 
-1. **View Count Double-Counting**: Resolved React StrictMode double-mount API calls by caching viewed video IDs in `sessionStorage` and validating requests against a memory lock ref during the mount lifecycle.
-2. **Component Coupling**: Reduced prop-drilling by employing browser native `EventTarget` dispatch calls to signal state invalidation dynamically across disconnected lists.
-3. **Cross-Browser HLS Support**: Designed custom playback control overlays to fallback gracefully to Safari's native WebKit player where MSE (Media Source Extensions) quality menus are restricted.
-
-## Future Improvements
-
-* WebSockets integration for real-time view counts and chat feeds.
-* Keyboard shortcuts and customizable playback rates in the player.
-
-## License
-
-MIT
